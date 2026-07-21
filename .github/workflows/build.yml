@@ -43,7 +43,7 @@ jobs:
       - name: build
         run: |
           cd C2ME-fabric-patched
-          ./gradlew clean build
+          ./gradlew clean build --no-configuration-cache
 
       - name: upload to modrinth and curseforge
         run: |
