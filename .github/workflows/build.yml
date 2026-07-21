@@ -56,10 +56,16 @@ jobs:
           GITHUB_EVENT_RAW_PATH: ${{ github.event_path }}
         continue-on-error: true
 
-      - name: capture build artifacts
+      - name: capture main artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Artifacts
+          name: C2ME-NeoForge
           path: |
             C2ME-fabric-patched/build/libs/
 
+      - name: capture OpenCL acceleration module
+        uses: actions/upload-artifact@v4
+        with:
+          name: C2ME-OpenCL-Acceleration
+          path: |
+            C2ME-fabric-patched/c2me-opts-accel-opencl/build/libs/
