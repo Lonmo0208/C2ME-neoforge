@@ -108,14 +108,15 @@ index 74ab2006..532fbb6f 100644
      }
  
      test {
-@@ -361,6 +356,7 @@ dependencies {
+@@ -361,6 +361,7 @@ String getVersionSuffix() {
  String getVersionSuffix() {
-     def stdout = providers.exec {
-         commandLine 'git', 'describe', '--tags', '--dirty', '--broken'
-+        workingDir = project.file("..")
-     }.standardOutput.asText.get()
-     stdout = stdout.toString().strip()
-     def suffix = ""
+     try {
+         def stdout = providers.exec {
+             commandLine 'git', 'describe', '--tags', '--dirty', '--broken'
++            workingDir = project.file("..")
+         }.standardOutput.asText.get()
+         stdout = stdout.toString().strip()
+         def suffix = ""
 diff --git a/buildSrc/build.gradle b/buildSrc/build.gradle
 index bb1e3ea4..7b3986c1 100644
 --- a/buildSrc/build.gradle
@@ -2467,25 +2468,6 @@ index 9889ea15..00000000
 -    }
 -  }
 -}
-diff --git a/c2me-opts-natives-math/build.gradle b/c2me-opts-natives-math/build.gradle
-index 8581b449..2cf71556 100644
---- a/c2me-opts-natives-math/build.gradle
-+++ b/c2me-opts-natives-math/build.gradle
-@@ -4,6 +4,14 @@ moduleDependencies(project, [
-         "c2me-base",
- ])
- 
-+jar {
-+    manifest {
-+        attributes([
-+                "MixinConfigs": "c2me-opts-natives-math.mixins.json"
-+        ])
-+    }
-+}
-+
- def addTarget(String target, String outputName) {
-     addTarget(target, outputName, outputName)
- }
 diff --git a/c2me-opts-natives-math/src/main/resources/META-INF/neoforge.mods.toml b/c2me-opts-natives-math/src/main/resources/META-INF/neoforge.mods.toml
 new file mode 100644
 index 00000000..bd468fa7
