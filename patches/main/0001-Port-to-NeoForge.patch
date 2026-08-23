@@ -3457,8 +3457,8 @@ index 9f11ff4d..01332d13 100644
 +                            LifecycleEventInvoker.invokeChunkUnload(((IThreadedAnvilChunkStorage) context.tacs()).getWorld(), worldChunk);
                              ((IThreadedAnvilChunkStorage) context.tacs()).getWorld().unloadEntities(worldChunk);
                          }
- 
-@@ -247,13 +249,15 @@ public class ReadFromDiskAsync extends ReadFromDisk {
+
+@@ -247,13 +249,16 @@ public class ReadFromDiskAsync extends ReadFromDisk {
              chunk.setNeedsSaving(false);
              ChunkPos chunkPos = chunk.getPos();
  
@@ -3471,23 +3471,30 @@ index 9f11ff4d..01332d13 100644
                              AsyncSerializationManager.push(scope);
                              try {
 -                                return SerializerAccess.getSerializer().serialize(((IThreadedAnvilChunkStorage) tacs).getWorld(), chunk);
-+                                return SerializerAccess.getSerializer().serialize(((IThreadedAnvilChunkStorage) tacs).getWorld(), chunk, !chunkSaveEventFree);
++                                return SerializerAccess.getSerializer().serialize(((IThreadedAnvilChunkStorage) tacs).getWorld(), chunk,
++                                        !chunkSaveEventFree);
                              } finally {
                                  AsyncSerializationManager.pop(scope);
                              }
-@@ -263,11 +267,22 @@ public class ReadFromDiskAsync extends ReadFromDisk {
+@@ -263,11 +268,27 @@ public class ReadFromDiskAsync extends ReadFromDisk {
                      .flatMapCompletable((either) -> {
                          try (var ignored = ThreadInstrumentation.getCurrent().begin(new ChunkTaskWork(context, this, false))) {
                              if (either.left().isPresent()) {
 -                                tacs.setNbt(chunkPos, either.left().get());
++                                NbtCompound nbt = either.left().get();
 +                                if (chunkSaveEventFree) {
-+                                    tacs.setNbt(chunkPos, either.left().get());
++                                    tacs.setNbt(chunkPos, nbt);
 +                                    return Completable.complete();
 +                                } else {
-+                                    NbtCompound nbt = either.left().get();
-+                                    return Completable.fromRunnable(() -> NeoForge.EVENT_BUS.post(new ChunkDataEvent.Save(chunk, ((IThreadedAnvilChunkStorage) tacs).getWorld(), nbt)))
-+                                            .subscribeOn(Schedulers.from(((IThreadedAnvilChunkStorage) tacs).getMainThreadExecutor()))
-+                                            .doOnComplete(() -> tacs.setNbt(chunkPos, nbt));
++                                    // Write first on IO thread, then fire event asynchronously on main thread
++                                    Completable saveTask = Completable.fromRunnable(() -> tacs.setNbt(chunkPos, nbt))
++                                            .subscribeOn(Schedulers.from(GlobalExecutors.prioritizedScheduler.executor(16)));
++                                    return saveTask.doOnComplete(() -> {
++                                        ((IThreadedAnvilChunkStorage) tacs).getMainThreadExecutor().execute(() ->
++                                            NeoForge.EVENT_BUS.post(new ChunkDataEvent.Save(chunk,
++                                                    ((IThreadedAnvilChunkStorage) tacs).getWorld(), nbt))
++                                        );
++                                    });
 +                                }
                              } else {
 +                                if (!chunkSaveEventFree) {
