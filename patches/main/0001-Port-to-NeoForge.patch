@@ -3457,8 +3457,8 @@ index 9f11ff4d..01332d13 100644
 +                            LifecycleEventInvoker.invokeChunkUnload(((IThreadedAnvilChunkStorage) context.tacs()).getWorld(), worldChunk);
                              ((IThreadedAnvilChunkStorage) context.tacs()).getWorld().unloadEntities(worldChunk);
                          }
-
-@@ -247,13 +249,16 @@ public class ReadFromDiskAsync extends ReadFromDisk {
+ 
+@@ -247,13 +249,15 @@ public class ReadFromDiskAsync extends ReadFromDisk {
              chunk.setNeedsSaving(false);
              ChunkPos chunkPos = chunk.getPos();
  
@@ -3471,8 +3471,7 @@ index 9f11ff4d..01332d13 100644
                              AsyncSerializationManager.push(scope);
                              try {
 -                                return SerializerAccess.getSerializer().serialize(((IThreadedAnvilChunkStorage) tacs).getWorld(), chunk);
-+                                return SerializerAccess.getSerializer().serialize(((IThreadedAnvilChunkStorage) tacs).getWorld(), chunk,
-+                                        !chunkSaveEventFree);
++                                return SerializerAccess.getSerializer().serialize(((IThreadedAnvilChunkStorage) tacs).getWorld(), chunk, !chunkSaveEventFree);
                              } finally {
                                  AsyncSerializationManager.pop(scope);
                              }
